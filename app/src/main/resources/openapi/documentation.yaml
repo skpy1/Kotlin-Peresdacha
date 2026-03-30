@@ -1,0 +1,276 @@
+openapi: 3.0.3
+info:
+  title: Shop Backend API
+  version: 1.0.0
+  description: API для интернет-магазина с JWT, PostgreSQL, Redis и RabbitMQ.
+servers:
+  - url: http://localhost:8080
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: user@example.com
+              password: secret123
+              fullName: Ivan Petrov
+      responses:
+        '200':
+          description: Успешная регистрация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  /auth/login:
+    post:
+      summary: Авторизация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: user@example.com
+              password: secret123
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+  /products:
+    get:
+      summary: Получить список товаров
+      responses:
+        '200':
+          description: Список товаров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      summary: Добавить товар (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '200':
+          description: Товар создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+  /products/{id}:
+    get:
+      summary: Получить товар по id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Один товар
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+    put:
+      summary: Обновить товар (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Товар обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+    delete:
+      summary: Удалить товар (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Товар удалён
+  /orders:
+    get:
+      summary: История покупок пользователя
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Список заказов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      summary: Создать заказ
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              items:
+                - productId: 1
+                  quantity: 2
+      responses:
+        '200':
+          description: Заказ создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+  /orders/{id}:
+    delete:
+      summary: Отменить заказ
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Заказ отменён
+  /stats/orders:
+    get:
+      summary: Статистика заказов (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Статистика по заказам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrdersStatsResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      properties:
+        email: { type: string }
+        password: { type: string }
+        fullName: { type: string }
+      required: [email, password, fullName]
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string }
+        password: { type: string }
+      required: [email, password]
+    User:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        email: { type: string }
+        fullName: { type: string }
+        role: { type: string }
+        createdAt: { type: string }
+    AuthResponse:
+      type: object
+      properties:
+        token: { type: string }
+        user:
+          $ref: '#/components/schemas/User'
+    Product:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        description: { type: string }
+        price: { type: string }
+        stock: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    CreateProductRequest:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        price: { type: string }
+        stock: { type: integer }
+      required: [name, description, price, stock]
+    UpdateProductRequest:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        price: { type: string }
+        stock: { type: integer }
+      required: [name, description, price, stock]
+    CreateOrderItemRequest:
+      type: object
+      properties:
+        productId: { type: integer, format: int64 }
+        quantity: { type: integer }
+      required: [productId, quantity]
+    CreateOrderRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateOrderItemRequest'
+    OrderItem:
+      type: object
+      properties:
+        productId: { type: integer, format: int64 }
+        productName: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: string }
+    Order:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        userId: { type: integer, format: int64 }
+        status: { type: string }
+        totalAmount: { type: string }
+        createdAt: { type: string }
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+    OrdersStatsResponse:
+      type: object
+      properties:
+        totalOrders: { type: integer, format: int64 }
+        cancelledOrders: { type: integer, format: int64 }
+        revenue: { type: string }

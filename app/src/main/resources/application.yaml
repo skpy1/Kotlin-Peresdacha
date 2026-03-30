@@ -1,0 +1,29 @@
+ktor:
+  application:
+    modules:
+      - com.example.shop.ApplicationKt.module
+  deployment:
+    host: "0.0.0.0"
+    port: 8080
+shop:
+  jwt:
+    issuer: "shop-service"
+    audience: "shop-users"
+    realm: "shop-api"
+    secret: "super-secret-change-me"
+    expiresInMinutes: 1440
+  database:
+    jdbcUrl: "jdbc:postgresql://localhost:5432/shop"
+    user: "shop"
+    password: "shop"
+    driverClassName: "org.postgresql.Driver"
+    maximumPoolSize: 10
+  redis:
+    uri: "redis://localhost:6379"
+    ttlSeconds: 300
+  rabbitmq:
+    host: "localhost"
+    port: 5672
+    username: "guest"
+    password: "guest"
+    queue: "orders.events"
